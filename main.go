@@ -7,25 +7,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/bigflood/leaderboard/http_handler"
+	"github.com/bigflood/leaderboard/http_server"
 	"github.com/bigflood/leaderboard/leaderboard"
 )
 
 func main() {
-	lb := &leaderboard.LeaderBoard{}
-	handler := http_handler.New(lb)
-	server := http.Server{
-		Addr:              ":8080",
-		ReadHeaderTimeout: 30 * time.Second,
-		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      120 * time.Second,
-		IdleTimeout:       330 * time.Second,
-		Handler:           handler.Setup(),
-	}
+	const addr = ":8080"
 
-	log.Println("listen", server.Addr)
+	lb := &leaderboard.LeaderBoard{}
+
+	server := http_server.New(lb)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -36,7 +28,8 @@ func main() {
 		}
 	}()
 
-	err := server.ListenAndServe()
+	log.Println("listen", addr)
+	err := server.ListenAndServe(addr)
 
 	if err != http.ErrServerClosed {
 		log.Fatal(err)
