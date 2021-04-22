@@ -1,4 +1,4 @@
-package main
+package http_handler
 
 import (
 	"encoding/json"
@@ -7,39 +7,41 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/bigflood/leaderboard/leaderboard"
 )
 
-type Router struct {
-	lb *LeaderBoard
+type HttpHandler struct {
+	lb *leaderboard.LeaderBoard
 }
 
-func NewRouter(lb *LeaderBoard) *Router {
-	return &Router{lb: lb}
+func New(lb *leaderboard.LeaderBoard) *HttpHandler {
+	return &HttpHandler{lb: lb}
 }
 
-func (router *Router) Setup() *http.ServeMux {
+func (handler *HttpHandler) Setup() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/usercount", router.HandleUserCount)
-	mux.HandleFunc("/users/", router.HandleUsers)
-	mux.HandleFunc("/ranks", router.HandleRanks)
+	mux.HandleFunc("/usercount", handler.HandleUserCount)
+	mux.HandleFunc("/users/", handler.HandleUsers)
+	mux.HandleFunc("/ranks", handler.HandleRanks)
 	return mux
 }
 
-func (router *Router) HandleUserCount(w http.ResponseWriter, r *http.Request) {
+func (handler *HttpHandler) HandleUserCount(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		count := router.lb.UserCount()
+		count := handler.lb.UserCount()
 		fmt.Fprintf(w, `{"count":%v}`, count)
 	default:
 		http.NotFound(w, r)
 	}
 }
 
-func (router *Router) HandleUsers(w http.ResponseWriter, r *http.Request) {
+func (handler *HttpHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	userId := strings.TrimPrefix(r.URL.EscapedPath(), "/users/")
 	switch r.Method {
 	case http.MethodGet:
-		user := router.lb.GetUser(userId)
+		user := handler.lb.GetUser(userId)
 		data, err := json.Marshal(user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -56,8 +58,8 @@ func (router *Router) HandleUsers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		router.lb.SetUser(userId, score)
-		user := router.lb.GetUser(userId)
+		handler.lb.SetUser(userId, score)
+		user := handler.lb.GetUser(userId)
 		data, err := json.Marshal(user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,7 +74,7 @@ func (router *Router) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (router *Router) HandleRanks(w http.ResponseWriter, r *http.Request) {
+func (handler *HttpHandler) HandleRanks(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		rank, err := getQueryParamInt(r, "rank")
@@ -87,7 +89,7 @@ func (router *Router) HandleRanks(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		users := router.lb.GetRanks(rank, count)
+		users := handler.lb.GetRanks(rank, count)
 		data, err := json.Marshal(users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

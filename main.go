@@ -8,18 +8,21 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/bigflood/leaderboard/http_handler"
+	"github.com/bigflood/leaderboard/leaderboard"
 )
 
 func main() {
-	lb := &LeaderBoard{}
-	router := NewRouter(lb)
+	lb := &leaderboard.LeaderBoard{}
+	handler := http_handler.New(lb)
 	server := http.Server{
 		Addr:              ":8080",
 		ReadHeaderTimeout: 30 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      120 * time.Second,
 		IdleTimeout:       330 * time.Second,
-		Handler:           router.Setup(),
+		Handler:           handler.Setup(),
 	}
 
 	log.Println("listen", server.Addr)
