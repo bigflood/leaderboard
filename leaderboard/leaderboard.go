@@ -1,28 +1,33 @@
 package leaderboard
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type LeaderBoard struct {
 }
 
-func (lb *LeaderBoard) UserCount() int {
-	return 100
+func (lb *LeaderBoard) UserCount(ctx context.Context) (int, error) {
+	return 100, nil
 }
 
-func (lb *LeaderBoard) GetUser(userId string) User {
-	return User{
+func (lb *LeaderBoard) GetUser(ctx context.Context, userId string) (User, error) {
+	user := User{
 		Id:        userId,
 		Score:     100,
 		Rank:      123,
 		UpdatedAt: time.Now(),
 	}
+	return user, nil
 }
 
-func (lb *LeaderBoard) SetUser(userId string, score int) {
+func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) error {
+	return nil
 }
 
-func (lb *LeaderBoard) GetRanks(rank, count int) []User {
-	return []User{
+func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, error) {
+	users := []User{
 		{
 			Id:        "a",
 			Score:     300,
@@ -42,6 +47,7 @@ func (lb *LeaderBoard) GetRanks(rank, count int) []User {
 			UpdatedAt: time.Now(),
 		},
 	}
+	return users, nil
 }
 
 type User struct {

@@ -28,9 +28,15 @@ func (handler *HttpHandler) Setup() *http.ServeMux {
 }
 
 func (handler *HttpHandler) HandleUserCount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	switch r.Method {
 	case http.MethodGet:
-		count := handler.lb.UserCount()
+		count, err := handler.lb.UserCount(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		fmt.Fprintf(w, `{"count":%v}`, count)
 	default:
 		http.NotFound(w, r)
@@ -38,10 +44,16 @@ func (handler *HttpHandler) HandleUserCount(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *HttpHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	userId := strings.TrimPrefix(r.URL.EscapedPath(), "/users/")
 	switch r.Method {
 	case http.MethodGet:
-		user := handler.lb.GetUser(userId)
+		user, err := handler.lb.GetUser(ctx, userId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		data, err := json.Marshal(user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -58,8 +70,16 @@ func (handler *HttpHandler) HandleUsers(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		handler.lb.SetUser(userId, score)
-		user := handler.lb.GetUser(userId)
+		if err := handler.lb.SetUser(ctx, userId, score); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		user, err := handler.lb.GetUser(ctx, userId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		data, err := json.Marshal(user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -75,6 +95,8 @@ func (handler *HttpHandler) HandleUsers(w http.ResponseWriter, r *http.Request) 
 }
 
 func (handler *HttpHandler) HandleRanks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	switch r.Method {
 	case http.MethodGet:
 		rank, err := getQueryParamInt(r, "rank")
@@ -89,7 +111,11 @@ func (handler *HttpHandler) HandleRanks(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		users := handler.lb.GetRanks(rank, count)
+		users, err := handler.lb.GetRanks(ctx, rank, count)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		data, err := json.Marshal(users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
