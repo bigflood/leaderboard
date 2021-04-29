@@ -39,7 +39,7 @@ func TestClientToServerLeaderBoardWithMultiGoroutines(t *testing.T) {
 	})
 }
 
-func testClientToServer(t *testing.T, logic *leaderboard.LeaderBoard, f func(client api.LeaderBoard)) {
+func testClientToServer(t *testing.T, logic api.LeaderBoard, f func(client api.LeaderBoard)) {
 	server := http_server.New(logic)
 
 	listener, err := net.Listen("tcp", ":0")

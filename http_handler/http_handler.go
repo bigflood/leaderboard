@@ -8,14 +8,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bigflood/leaderboard/leaderboard"
+	"github.com/bigflood/leaderboard/api"
 )
 
 type HttpHandler struct {
-	lb *leaderboard.LeaderBoard
+	lb api.LeaderBoard
 }
 
-func New(lb *leaderboard.LeaderBoard) *HttpHandler {
+func New(lb api.LeaderBoard) *HttpHandler {
 	return &HttpHandler{lb: lb}
 }
 

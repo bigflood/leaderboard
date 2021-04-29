@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bigflood/leaderboard/api"
 	"github.com/bigflood/leaderboard/http_handler"
-	"github.com/bigflood/leaderboard/leaderboard"
 )
 
 type Server struct {
 	httpServer *http.Server
 }
 
-func New(lb *leaderboard.LeaderBoard) *Server {
+func New(lb api.LeaderBoard) *Server {
 	handler := http_handler.New(lb)
 	httpServer := &http.Server{
 		ReadHeaderTimeout: 30 * time.Second,
