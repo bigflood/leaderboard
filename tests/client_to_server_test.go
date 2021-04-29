@@ -18,7 +18,7 @@ import (
 )
 
 func TestClientToServerLeaderBoard(t *testing.T) {
-	now := time.Now().Truncate(time.Millisecond)
+	now := time.Now().UTC().Truncate(time.Millisecond)
 
 	lb := &leaderboard.LeaderBoard{
 		NowFunc: func() time.Time {
