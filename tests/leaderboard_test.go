@@ -1,4 +1,4 @@
-package leaderboard_test
+package tests
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bigflood/leaderboard/api"
 	"github.com/bigflood/leaderboard/leaderboard"
 	. "github.com/onsi/gomega"
 )
@@ -15,15 +16,19 @@ import (
 func TestLeaderBoard(t *testing.T) {
 	now := time.Now()
 
-	ctx := context.Background()
-
-	g := NewWithT(t)
-
 	lb := &leaderboard.LeaderBoard{
 		NowFunc: func() time.Time {
 			return now
 		},
 	}
+
+	testLeaderBoard(t, lb, now)
+}
+
+func testLeaderBoard(t *testing.T, lb api.LeaderBoard, now time.Time) {
+	ctx := context.Background()
+
+	g := NewWithT(t)
 
 	count, err := lb.UserCount(ctx)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -89,10 +94,14 @@ func TestLeaderBoard(t *testing.T) {
 }
 
 func TestMultiGoroutines(t *testing.T) {
+	lb := &leaderboard.LeaderBoard{}
+	testMultiGoroutines(t, lb)
+}
+
+func testMultiGoroutines(t *testing.T, lb api.LeaderBoard) {
 	g := NewWithT(t)
 
 	ctx := context.Background()
-	lb := &leaderboard.LeaderBoard{}
 
 	wg := sync.WaitGroup{}
 

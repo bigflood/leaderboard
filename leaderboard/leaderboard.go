@@ -6,7 +6,11 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/bigflood/leaderboard/api"
 )
+
+type User = api.User
 
 type LeaderBoard struct {
 	NowFunc func() time.Time
@@ -102,12 +106,4 @@ func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, e
 	}
 
 	return returnUsers, nil
-}
-
-type User struct {
-	Id    string `json:"id"`
-	Score int    `json:"score"`
-	// 1부터 시작하는 순위
-	Rank      int       `json:"rank"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
