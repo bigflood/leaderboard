@@ -2,12 +2,14 @@ package http_server
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/bigflood/leaderboard/api"
 	"github.com/bigflood/leaderboard/pkg/http_handler"
+	"github.com/bigflood/leaderboard/pkg/logging_mw"
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,7 +18,14 @@ type Server struct {
 	e          *echo.Echo
 }
 
-func New(lb api.LeaderBoard) *Server {
+func New(lb api.LeaderBoard, logger *log.Logger) *Server {
+	if logger != nil {
+		lb = &logging_mw.LoggingMiddleware{
+			Receiver: lb,
+			Logger:   logger,
+		}
+	}
+
 	handler := http_handler.New(lb)
 
 	e := echo.New()

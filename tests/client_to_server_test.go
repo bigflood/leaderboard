@@ -40,7 +40,7 @@ func TestClientToServerLeaderBoardWithMultiGoroutines(t *testing.T) {
 }
 
 func testClientToServer(t *testing.T, logic api.LeaderBoard, f func(client api.LeaderBoard)) {
-	server := http_server.New(logic)
+	server := http_server.New(logic, nil)
 
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {

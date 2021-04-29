@@ -17,7 +17,7 @@ func main() {
 
 	lb := &leaderboard.LeaderBoard{}
 
-	server := http_server.New(lb)
+	server := http_server.New(lb, log.Default())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
