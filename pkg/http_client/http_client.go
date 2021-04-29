@@ -72,7 +72,7 @@ func (client *Client) doReq(ctx context.Context, method, path string, data inter
 		if msg == "" {
 			msg = resp.Status
 		}
-		return errors.New(msg)
+		return api.ErrorWithStatusCode(errors.New(msg), resp.StatusCode)
 	}
 
 	return json.NewDecoder(resp.Body).Decode(data)

@@ -3,6 +3,7 @@ package leaderboard
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sort"
 	"sync"
 	"time"
@@ -15,7 +16,7 @@ type User = api.User
 type LeaderBoard struct {
 	NowFunc func() time.Time
 
-	mutext    sync.Mutex
+	mutex     sync.Mutex
 	users     []*User
 	userIdMap map[string]*User
 }
@@ -28,27 +29,27 @@ func (lb *LeaderBoard) now() time.Time {
 }
 
 func (lb *LeaderBoard) UserCount(ctx context.Context) (int, error) {
-	lb.mutext.Lock()
-	defer lb.mutext.Unlock()
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
 
 	return len(lb.users), nil
 }
 
 func (lb *LeaderBoard) GetUser(ctx context.Context, userId string) (User, error) {
-	lb.mutext.Lock()
-	defer lb.mutext.Unlock()
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
 
-	user, ok := lb.userIdMap[userId]
-	if !ok {
-		return User{}, errors.New("user not found")
+	user := lb.userIdMap[userId]
+	if user == nil {
+		return User{}, api.ErrorWithStatusCode(errors.New("not found"), http.StatusNotFound)
 	}
 
 	return *user, nil
 }
 
 func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) error {
-	lb.mutext.Lock()
-	defer lb.mutext.Unlock()
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
 
 	user := lb.userIdMap[userId]
 	if user == nil {
@@ -80,15 +81,15 @@ func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) er
 
 func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, error) {
 	if rank < 1 {
-		return nil, errors.New("invalid rank")
+		return nil, api.ErrorWithStatusCode(errors.New("invalid rank"), http.StatusBadRequest)
 	}
 
 	if count <= 0 {
-		return nil, errors.New("invalid count")
+		return nil, api.ErrorWithStatusCode(errors.New("invalid count"), http.StatusBadRequest)
 	}
 
-	lb.mutext.Lock()
-	defer lb.mutext.Unlock()
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
 
 	baseIndex := rank - 1
 	if baseIndex >= len(lb.users) {
