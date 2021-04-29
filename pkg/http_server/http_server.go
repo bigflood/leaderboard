@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bigflood/leaderboard/api"
-	"github.com/bigflood/leaderboard/http_handler"
+	"github.com/bigflood/leaderboard/pkg/http_handler"
 )
 
 type Server struct {

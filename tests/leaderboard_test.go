@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bigflood/leaderboard/api"
-	"github.com/bigflood/leaderboard/leaderboard"
+	"github.com/bigflood/leaderboard/pkg/leaderboard"
 	. "github.com/onsi/gomega"
 )
 

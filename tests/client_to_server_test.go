@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/bigflood/leaderboard/api"
-	"github.com/bigflood/leaderboard/http_client"
-	"github.com/bigflood/leaderboard/http_server"
-	"github.com/bigflood/leaderboard/leaderboard"
+	"github.com/bigflood/leaderboard/pkg/http_client"
+	"github.com/bigflood/leaderboard/pkg/http_server"
+	"github.com/bigflood/leaderboard/pkg/leaderboard"
 )
 
 func TestClientToServerLeaderBoard(t *testing.T) {

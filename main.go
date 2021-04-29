@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/bigflood/leaderboard/http_server"
-	"github.com/bigflood/leaderboard/leaderboard"
+	"github.com/bigflood/leaderboard/pkg/http_server"
+	"github.com/bigflood/leaderboard/pkg/leaderboard"
 )
 
 func main() {
