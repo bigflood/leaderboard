@@ -1,14 +1,12 @@
 package http_handler
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
+	"context"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/bigflood/leaderboard/api"
+	"github.com/labstack/echo/v4"
 )
 
 type HttpHandler struct {
@@ -19,122 +17,90 @@ func New(lb api.LeaderBoard) *HttpHandler {
 	return &HttpHandler{lb: lb}
 }
 
-func (handler *HttpHandler) Setup() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/usercount", handler.HandleUserCount)
-	mux.HandleFunc("/users/", handler.HandleUsers)
-	mux.HandleFunc("/ranks", handler.HandleRanks)
-	return mux
-}
-
-func (handler *HttpHandler) HandleUserCount(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	switch r.Method {
-	case http.MethodGet:
-		count, err := handler.lb.UserCount(ctx)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		fmt.Fprintf(w, `{"count":%v}`, count)
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func (handler *HttpHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	userId := strings.TrimPrefix(r.URL.EscapedPath(), "/users/")
-	switch r.Method {
-	case http.MethodGet:
-		user, err := handler.lb.GetUser(ctx, userId)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data, err := json.Marshal(user)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err := w.Write(data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	case http.MethodPut:
-		score, err := getQueryParamInt(r, "score")
-		if err != nil {
-			http.Error(w, "cannot parse score", http.StatusBadRequest)
-			return
-		}
-
-		if err := handler.lb.SetUser(ctx, userId, score); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		user, err := handler.lb.GetUser(ctx, userId)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data, err := json.Marshal(user)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err := w.Write(data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func (handler *HttpHandler) HandleRanks(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	switch r.Method {
-	case http.MethodGet:
-		rank, err := getQueryParamInt(r, "rank")
-		if err != nil {
-			http.Error(w, "cannot parse rank", http.StatusBadRequest)
-			return
-		}
-
-		count, err := getQueryParamInt(r, "count")
-		if err != nil {
-			http.Error(w, "cannot parse count", http.StatusBadRequest)
-			return
-		}
-
-		users, err := handler.lb.GetRanks(ctx, rank, count)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data, err := json.Marshal(users)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err := w.Write(data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func getQueryParamInt(r *http.Request, name string) (int, error) {
-	s := strings.TrimSpace(r.URL.Query().Get(name))
-	if s == "" {
-		return 0, errors.New("empty")
+func convertError(err error) error {
+	if err == nil {
+		return nil
 	}
 
-	return strconv.Atoi(s)
+	if s, ok := err.(interface{ StatusCode() int }); ok {
+		return echo.NewHTTPError(s.StatusCode(), err.Error())
+	}
+
+	return err
+}
+
+func (handler *HttpHandler) Setup(e *echo.Echo) {
+	e.GET("/usercount", handler.HandleGetUserCount)
+	e.GET("/users/:id", handler.HandleGetUsers)
+	e.PUT("/users/:id", handler.HandlePutUsers)
+	e.GET("/ranks", handler.HandleGetRanks)
+}
+
+func (handler *HttpHandler) HandleGetUserCount(c echo.Context) error {
+	ctx := context.Background()
+	count, err := handler.lb.UserCount(ctx)
+	if err != nil {
+		return convertError(err)
+	}
+
+	type UserCountData struct {
+		Count int `json:"count"`
+	}
+
+	return c.JSON(http.StatusOK, UserCountData{Count: count})
+}
+
+func (handler *HttpHandler) HandleGetUsers(c echo.Context) error {
+	ctx := context.Background()
+	userId := c.Param("id")
+	user, err := handler.lb.GetUser(ctx, userId)
+	if err != nil {
+		return convertError(err)
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
+func (handler *HttpHandler) HandlePutUsers(c echo.Context) error {
+	ctx := context.Background()
+	userId := c.Param("id")
+	score, err := strconv.Atoi(c.QueryParam("score"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, messageData{"score is empty or invalid format"})
+	}
+
+	if err := handler.lb.SetUser(ctx, userId, score); err != nil {
+		return convertError(err)
+	}
+
+	user, err := handler.lb.GetUser(ctx, userId)
+	if err != nil {
+		return convertError(err)
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
+func (handler *HttpHandler) HandleGetRanks(c echo.Context) error {
+	ctx := context.Background()
+	rank, err := strconv.Atoi(c.QueryParam("rank"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, messageData{"rank is empty or invalid format"})
+	}
+
+	count, err := strconv.Atoi(c.QueryParam("count"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, messageData{"count is empty or invalid format"})
+	}
+
+	users, err := handler.lb.GetRanks(ctx, rank, count)
+	if err != nil {
+		return convertError(err)
+	}
+
+	return c.JSON(http.StatusOK, users)
+}
+
+type messageData struct {
+	Message string `json:"message"`
 }
