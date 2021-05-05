@@ -17,16 +17,21 @@ func New(lb api.LeaderBoard) *HttpHandler {
 	return &HttpHandler{lb: lb}
 }
 
-func convertError(err error) error {
+func errorJson(c echo.Context, err error) error {
 	if err == nil {
 		return nil
 	}
 
-	if s, ok := err.(interface{ StatusCode() int }); ok {
-		return echo.NewHTTPError(s.StatusCode(), err.Error())
+	type messageData struct {
+		Message string `json:"message"`
 	}
 
-	return err
+	statusCode := http.StatusInternalServerError
+	if s, ok := err.(interface{ StatusCode() int }); ok {
+		statusCode = s.StatusCode()
+	}
+
+	return c.JSON(statusCode, messageData{err.Error()})
 }
 
 func (handler *HttpHandler) Setup(e *echo.Echo) {
@@ -40,7 +45,7 @@ func (handler *HttpHandler) HandleGetUserCount(c echo.Context) error {
 	ctx := context.Background()
 	count, err := handler.lb.UserCount(ctx)
 	if err != nil {
-		return convertError(err)
+		return errorJson(c, err)
 	}
 
 	type UserCountData struct {
@@ -55,7 +60,7 @@ func (handler *HttpHandler) HandleGetUsers(c echo.Context) error {
 	userId := c.Param("id")
 	user, err := handler.lb.GetUser(ctx, userId)
 	if err != nil {
-		return convertError(err)
+		return errorJson(c, err)
 	}
 
 	return c.JSON(http.StatusOK, user)
@@ -70,12 +75,12 @@ func (handler *HttpHandler) HandlePutUsers(c echo.Context) error {
 	}
 
 	if err := handler.lb.SetUser(ctx, userId, score); err != nil {
-		return convertError(err)
+		return errorJson(c, err)
 	}
 
 	user, err := handler.lb.GetUser(ctx, userId)
 	if err != nil {
-		return convertError(err)
+		return errorJson(c, err)
 	}
 
 	return c.JSON(http.StatusOK, user)
@@ -95,7 +100,7 @@ func (handler *HttpHandler) HandleGetRanks(c echo.Context) error {
 
 	users, err := handler.lb.GetRanks(ctx, rank, count)
 	if err != nil {
-		return convertError(err)
+		return errorJson(c, err)
 	}
 
 	return c.JSON(http.StatusOK, users)
