@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/bigflood/leaderboard/pkg/storage"
 	"math/rand"
 	"sync"
 	"testing"
@@ -14,12 +15,13 @@ import (
 )
 
 func TestLeaderBoard(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC().Truncate(time.Millisecond)
 
 	lb := &leaderboard.LeaderBoard{
 		NowFunc: func() time.Time {
 			return now
 		},
+		Storage: &storage.Storage{},
 	}
 
 	testLeaderBoard(t, lb, now)
@@ -94,7 +96,9 @@ func testLeaderBoard(t *testing.T, lb api.LeaderBoard, now time.Time) {
 }
 
 func TestMultiGoroutines(t *testing.T) {
-	lb := &leaderboard.LeaderBoard{}
+	lb := &leaderboard.LeaderBoard{
+		Storage: &storage.Storage{},
+	}
 	testMultiGoroutines(t, lb)
 }
 
@@ -114,7 +118,7 @@ func testMultiGoroutines(t *testing.T, lb api.LeaderBoard) {
 			time.Sleep(time.Duration(rand.Intn(10)))
 
 			userId := fmt.Sprint(i)
-			err := lb.SetUser(ctx, userId, (n - i))
+			err := lb.SetUser(ctx, userId, n - i)
 			g.Expect(err).NotTo(HaveOccurred())
 		}(i)
 	}

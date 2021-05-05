@@ -2,10 +2,9 @@ package leaderboard
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
-	"sort"
-	"sync"
 	"time"
 
 	"github.com/bigflood/leaderboard/api"
@@ -16,9 +15,15 @@ type User = api.User
 type LeaderBoard struct {
 	NowFunc func() time.Time
 
-	mutex     sync.Mutex
-	users     []*User
-	userIdMap map[string]*User
+	Storage Storage
+}
+
+type Storage interface {
+	Count(ctx context.Context) (int, error)
+	GetData(ctx context.Context, keys ...string) ([][]byte, error)
+	SetData(ctx context.Context, key string, data []byte, score int) error
+	GetRanks(ctx context.Context, keys ...string) ([]int, error)
+	GetSortedRange(ctx context.Context, rank, count int) ([]string, error)
 }
 
 func (lb *LeaderBoard) now() time.Time {
@@ -29,59 +34,63 @@ func (lb *LeaderBoard) now() time.Time {
 }
 
 func (lb *LeaderBoard) UserCount(ctx context.Context) (int, error) {
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
-
-	return len(lb.users), nil
+	return lb.Storage.Count(ctx)
 }
 
 func (lb *LeaderBoard) GetUser(ctx context.Context, userId string) (User, error) {
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
+	users, err := lb.Storage.GetData(ctx, userId)
+	if err != nil {
+		return User{}, err
+	}
 
-	user := lb.userIdMap[userId]
-	if user == nil {
+	if len(users[0]) == 0 {
 		return User{}, api.ErrorWithStatusCode(errors.New("not found"), http.StatusNotFound)
 	}
 
-	return *user, nil
+	user := User{}
+	if err := json.Unmarshal(users[0], &user); err != nil {
+		return User{}, err
+	}
+
+	ranks, err := lb.Storage.GetRanks(ctx, userId)
+	if err != nil {
+		return User{}, err
+	}
+
+	user.Rank = ranks[0]
+	return user, nil
 }
 
 func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) error {
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
-
-	user := lb.userIdMap[userId]
-	if user == nil {
-		user := &User{
-			Id:        userId,
-			Score:     score,
-			UpdatedAt: lb.now(),
-		}
-		lb.users = append(lb.users, user)
-
-		if lb.userIdMap == nil {
-			lb.userIdMap = map[string]*User{}
-		}
-		lb.userIdMap[userId] = user
-	} else {
-		if user.Score == score {
-			return nil
-		}
-
-		user.Score = score
-		user.UpdatedAt = lb.now()
+	users, err := lb.Storage.GetData(ctx, userId)
+	if err != nil {
+		return err
 	}
 
-	sort.Slice(lb.users, func(i, j int) bool {
-		return lb.users[i].Score > lb.users[j].Score
-	})
-
-	for i, user := range lb.users {
-		user.Rank = i + 1
+	oldData := users[0]
+	oldUser := User{}
+	if len(oldData) != 0 {
+		if err := json.Unmarshal(oldData, &oldUser); err != nil {
+			return err
+		}
 	}
 
-	return nil
+	if oldUser.Score == score {
+		return nil
+	}
+
+	newUser := User{
+		Id:        userId,
+		Score:     score,
+		UpdatedAt: lb.now(),
+	}
+
+	newData, err := json.Marshal(newUser)
+	if err != nil {
+		return err
+	}
+
+	return lb.Storage.SetData(ctx, userId, newData, score)
 }
 
 func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, error) {
@@ -93,22 +102,27 @@ func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, e
 		return nil, api.ErrorWithStatusCode(errors.New("invalid count"), http.StatusBadRequest)
 	}
 
-	lb.mutex.Lock()
-	defer lb.mutex.Unlock()
-
-	baseIndex := rank - 1
-	if baseIndex >= len(lb.users) {
-		return nil, nil
+	sortedKeys, err := lb.Storage.GetSortedRange(ctx, rank, count)
+	if err != nil {
+		return nil, err
 	}
 
-	if maxCount := len(lb.users) - baseIndex; count > maxCount {
-		count = maxCount
+	userIds := make([]string, len(sortedKeys))
+	for i, key := range sortedKeys {
+		userIds[i] = key
 	}
 
-	returnUsers := make([]User, count)
+	userDataList, err := lb.Storage.GetData(ctx, userIds...)
+	if err != nil {
+		return nil, err
+	}
 
-	for i := range returnUsers {
-		returnUsers[i] = *lb.users[baseIndex+i]
+	returnUsers := make([]User, len(userDataList))
+	for i, u := range userDataList {
+		if err := json.Unmarshal(u, &returnUsers[i]); err != nil {
+			return nil, err
+		}
+		returnUsers[i].Rank = rank + i
 	}
 
 	return returnUsers, nil

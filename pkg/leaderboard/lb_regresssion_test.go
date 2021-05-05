@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/benbjohnson/clock"
 	. "github.com/bigflood/leaderboard/pkg/leaderboard"
+	"github.com/bigflood/leaderboard/pkg/storage"
 	. "github.com/onsi/gomega"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ func TestLeaderBoard_UpdatedAt(t *testing.T) {
 
 	lb := LeaderBoard{
 		NowFunc: timeMock.Now,
+		Storage: &storage.Storage{},
 	}
 
 	t1 := time.Now().UTC().Truncate(time.Hour)
