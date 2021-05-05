@@ -65,6 +65,10 @@ func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) er
 		}
 		lb.userIdMap[userId] = user
 	} else {
+		if user.Score == score {
+			return nil
+		}
+
 		user.Score = score
 		user.UpdatedAt = lb.now()
 	}
