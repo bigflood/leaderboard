@@ -66,6 +66,7 @@ func (lb *LeaderBoard) SetUser(ctx context.Context, userId string, score int) er
 		lb.userIdMap[userId] = user
 	} else {
 		user.Score = score
+		user.UpdatedAt = lb.now()
 	}
 
 	sort.Slice(lb.users, func(i, j int) bool {
