@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type Storage struct {
+type MemStorage struct {
 	mutex        sync.Mutex
 	values       map[string][]byte
 	scores       map[string]Score
@@ -20,14 +20,14 @@ type Score struct {
 	rank  int
 }
 
-func (storage *Storage) Count(ctx context.Context) (int, error) {
+func (storage *MemStorage) Count(ctx context.Context) (int, error) {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 
 	return len(storage.sortedScores), nil
 }
 
-func (storage *Storage) GetData(ctx context.Context, keys ...string) ([][]byte, error) {
+func (storage *MemStorage) GetData(ctx context.Context, keys ...string) ([][]byte, error) {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 
@@ -40,7 +40,7 @@ func (storage *Storage) GetData(ctx context.Context, keys ...string) ([][]byte, 
 	return returnList, nil
 }
 
-func (storage *Storage) SetData(ctx context.Context, key string, data []byte, score int) error {
+func (storage *MemStorage) SetData(ctx context.Context, key string, data []byte, score int) error {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 
@@ -73,7 +73,7 @@ func (storage *Storage) SetData(ctx context.Context, key string, data []byte, sc
 	return nil
 }
 
-func (storage *Storage) GetRanks(ctx context.Context, keys ...string) ([]int, error) {
+func (storage *MemStorage) GetRanks(ctx context.Context, keys ...string) ([]int, error) {
 	storage.mutex.Lock()
 	defer storage.mutex.Unlock()
 
@@ -89,7 +89,7 @@ func (storage *Storage) GetRanks(ctx context.Context, keys ...string) ([]int, er
 	return returnData, nil
 }
 
-func (storage *Storage) GetSortedRange(ctx context.Context, rank, count int) ([]string, error) {
+func (storage *MemStorage) GetSortedRange(ctx context.Context, rank, count int) ([]string, error) {
 	if rank < 1 {
 		return nil, errors.New("invalid rank")
 	}

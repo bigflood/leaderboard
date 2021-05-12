@@ -25,7 +25,7 @@ func TestClientToServerLeaderBoard(t *testing.T) {
 		NowFunc: func() time.Time {
 			return now
 		},
-		Storage: &storage.Storage{},
+		Storage: &storage.MemStorage{},
 	}
 
 	testClientToServer(t, lb, func(client api.LeaderBoard) {
@@ -35,7 +35,7 @@ func TestClientToServerLeaderBoard(t *testing.T) {
 
 func TestClientToServerLeaderBoardWithMultiGoroutines(t *testing.T) {
 	lb := &leaderboard.LeaderBoard{
-		Storage: &storage.Storage{},
+		Storage: &storage.MemStorage{},
 	}
 
 	testClientToServer(t, lb, func(client api.LeaderBoard) {

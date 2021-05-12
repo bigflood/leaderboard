@@ -21,7 +21,7 @@ func TestLeaderBoard(t *testing.T) {
 		NowFunc: func() time.Time {
 			return now
 		},
-		Storage: &storage.Storage{},
+		Storage: &storage.MemStorage{},
 	}
 
 	testLeaderBoard(t, lb, now)
@@ -97,7 +97,7 @@ func testLeaderBoard(t *testing.T, lb api.LeaderBoard, now time.Time) {
 
 func TestMultiGoroutines(t *testing.T) {
 	lb := &leaderboard.LeaderBoard{
-		Storage: &storage.Storage{},
+		Storage: &storage.MemStorage{},
 	}
 	testMultiGoroutines(t, lb)
 }
@@ -118,7 +118,7 @@ func testMultiGoroutines(t *testing.T, lb api.LeaderBoard) {
 			time.Sleep(time.Duration(rand.Intn(10)))
 
 			userId := fmt.Sprint(i)
-			err := lb.SetUser(ctx, userId, n - i)
+			err := lb.SetUser(ctx, userId, n-i)
 			g.Expect(err).NotTo(HaveOccurred())
 		}(i)
 	}

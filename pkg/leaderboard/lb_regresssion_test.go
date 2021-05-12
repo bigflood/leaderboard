@@ -18,7 +18,7 @@ func TestLeaderBoard_UpdatedAt(t *testing.T) {
 
 	lb := LeaderBoard{
 		NowFunc: timeMock.Now,
-		Storage: &storage.Storage{},
+		Storage: &storage.MemStorage{},
 	}
 
 	t1 := time.Now().UTC().Truncate(time.Hour)
@@ -26,7 +26,7 @@ func TestLeaderBoard_UpdatedAt(t *testing.T) {
 
 	{
 		const score = 100
-		err := lb.SetUser(ctx, "user1",  score)
+		err := lb.SetUser(ctx, "user1", score)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		user, err := lb.GetUser(ctx, "user1")
@@ -42,7 +42,7 @@ func TestLeaderBoard_UpdatedAt(t *testing.T) {
 		// SetUser함수가 score를 변경하는 경우 updatedAt을 변경 시간으로 갱신해야함
 
 		const score = 200
-		err := lb.SetUser(ctx, "user1",  score)
+		err := lb.SetUser(ctx, "user1", score)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		user, err := lb.GetUser(ctx, "user1")
@@ -58,7 +58,7 @@ func TestLeaderBoard_UpdatedAt(t *testing.T) {
 		// SetUser함수는 score가 변경되지 않는 경우 updatedAt도 변경하지 않아야함
 
 		const score = 200
-		err := lb.SetUser(ctx, "user1",  score)
+		err := lb.SetUser(ctx, "user1", score)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		user, err := lb.GetUser(ctx, "user1")
