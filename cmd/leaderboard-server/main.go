@@ -2,20 +2,22 @@ package main
 
 import (
 	"context"
+	"github.com/bigflood/leaderboard/pkg/http_server"
+	"github.com/bigflood/leaderboard/pkg/leaderboard"
+	"github.com/bigflood/leaderboard/pkg/storage"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/bigflood/leaderboard/pkg/http_server"
-	"github.com/bigflood/leaderboard/pkg/leaderboard"
 )
 
 func main() {
 	const addr = ":8080"
 
-	lb := &leaderboard.LeaderBoard{}
+	lb := &leaderboard.LeaderBoard{
+		Storage: &storage.MemStorage{},
+	}
 
 	server := http_server.New(lb, log.Default())
 
