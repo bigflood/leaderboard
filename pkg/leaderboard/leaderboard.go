@@ -102,14 +102,9 @@ func (lb *LeaderBoard) GetRanks(ctx context.Context, rank, count int) ([]User, e
 		return nil, api.ErrorWithStatusCode(errors.New("invalid count"), http.StatusBadRequest)
 	}
 
-	sortedKeys, err := lb.Storage.GetSortedRange(ctx, rank, count)
+	userIds, err := lb.Storage.GetSortedRange(ctx, rank, count)
 	if err != nil {
 		return nil, err
-	}
-
-	userIds := make([]string, len(sortedKeys))
-	for i, key := range sortedKeys {
-		userIds[i] = key
 	}
 
 	userDataList, err := lb.Storage.GetData(ctx, userIds...)
