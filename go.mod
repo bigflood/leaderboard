@@ -3,6 +3,7 @@ module github.com/bigflood/leaderboard
 go 1.16
 
 require (
+	github.com/alicebob/miniredis/v2 v2.14.3
 	github.com/benbjohnson/clock v1.1.0
 	github.com/go-redis/redis/v8 v8.8.2
 	github.com/labstack/echo/v4 v4.2.2
