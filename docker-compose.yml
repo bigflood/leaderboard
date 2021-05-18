@@ -1,0 +1,15 @@
+version: '3'
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+  leaderboard:
+    build:
+      context: .
+    depends_on:
+      - "redis"
+    environment:
+      REDIS_ADDR: "redis:6379"
+    ports:
+      - "8080:8080"
